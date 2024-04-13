@@ -1,7 +1,6 @@
-import { Api, Bucket, StackContext, Function } from "sst/constructs";
-import { PolicyStatement, Role, ServicePrincipal } from "@aws-cdk/aws-iam";
+import { Api, Bucket, StackContext } from "sst/constructs";
 
-export function ExampleStack({ stack }: StackContext) {
+export function ApiStack({ stack }: StackContext) {
   const bucket = new Bucket(stack, "Bucket");
 
   // Create the HTTP API

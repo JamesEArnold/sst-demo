@@ -1,4 +1,4 @@
-import axios, { ResponseType } from "axios";
+import axios from "axios";
 import FormData from "form-data";
 import viewstate from "@rest-api/core/viewstate";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
@@ -6,6 +6,7 @@ import { S3Handler } from "aws-lambda";
 import { Bucket } from "sst/node/bucket";
 
 const S3 = new S3Client({});
+const downloadUrl = 'https://energychoice.ohio.gov/ApplesToApplesComparision.aspx?Category=Electric&TerritoryId=2&RateCode=1';
 
 export const handler: S3Handler = async (event) => {
 
@@ -33,18 +34,17 @@ export const handler: S3Handler = async (event) => {
 
   const config = {
     method: 'post',
-    url: 'https://energychoice.ohio.gov/ApplesToApplesComparision.aspx?Category=Electric&TerritoryId=2&RateCode=1',
+    url: downloadUrl,
     headers: { 
         ...formData.getHeaders()
     },
     data : formData,
-    // responseType: 'stream' as ResponseType,
   };  
 
 
   const response = await axios(config);
 
-  const key = `${new Date().valueOf().toString()}`;
+  const key = `${new Date().valueOf().toString()}.txt`;
 
   const command = new PutObjectCommand({
     Body: response.data,
