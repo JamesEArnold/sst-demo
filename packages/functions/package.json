@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@aws-sdk/lib-storage": "^3.554.0",
+    "@sparticuz/chromium": "^123.0.1",
     "axios": "^1.6.8",
     "form-data": "^4.0.0"
   }
