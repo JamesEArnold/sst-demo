@@ -1,9 +1,48 @@
 import { ApiHandler } from "sst/node/api";
 import puppeteer from "puppeteer-core";
 import chromium from "@sparticuz/chromium";
+import { createHash } from 'crypto';
+import { S3Client, PutObjectCommand, S3, GetObjectCommand } from "@aws-sdk/client-s3";
+
+
+const s3 = new S3({});
+const s3Client = new S3Client({});
 
 // This is the path to the local Chromium binary
 const YOUR_LOCAL_CHROMIUM_PATH = "/tmp/localChromium/chromium/mac-1287751/chrome-mac/Chromium.app/Contents/MacOS/Chromium";
+
+const BUCKET_NAME = 'james-rest-api-apistack-bucketd7feb781-gxivyvk8z99n';
+const OBJECT_KEY = 'current-data-hash';
+
+function computeHash(data: string): string {
+  return createHash('sha256').update(data).digest('hex');
+}
+
+const stepLogs = {};
+
+async function getStoredHashFromS3(): Promise<string | undefined> {
+  try {
+    const command = new GetObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: OBJECT_KEY,
+    });
+
+    const response = await s3Client.send(command);
+
+      return await response.Body?.transformToString() || '';
+    } catch (error) {
+      console.log('Error retrieving hash from S3:', error);
+      return undefined;
+  }
+}
+
+async function saveHashToS3(hash: string): Promise<void> {
+  await s3.putObject({
+      Bucket: BUCKET_NAME,
+      Key: OBJECT_KEY,
+      Body: hash
+  });
+}
 
 export const handler = ApiHandler(async (_evt) => {
   const browser = await puppeteer.launch({
@@ -39,8 +78,27 @@ export const handler = ApiHandler(async (_evt) => {
     return null; // Return null if no input element found
   });
 
+  const currentHash = computeHash(JSON.stringify(viewStateValue, Object.keys(viewStateValue || {}).sort()));
+  const storedHash = await getStoredHashFromS3();
+
+  // console.log('Current Data:', JSON.stringify(viewStateValue, null, 2));
+  console.log('Current Hash:', currentHash);
+  console.log('Stored Hash:', JSON.stringify(storedHash));
+
+
+  if (currentHash === storedHash) {
+    console.log('No changes detected.');
+    return {
+      statusCode: 200,
+      body: 'No changes detected',
+    }
+  }
+
+  console.log('Changes detected, updating hash and processing data...');
+  await saveHashToS3(currentHash);
+
   return {
     statusCode: 200,
     body: JSON.stringify({ viewStateValue }),
-};
+  };
 });

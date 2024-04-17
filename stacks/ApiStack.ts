@@ -36,6 +36,8 @@ export function ApiStack({ stack }: StackContext) {
               external: ["@sparticuz/chromium"],
             },
           },
+          permissions: [bucket],
+          bind: [bucket],
         },
       }
     },
